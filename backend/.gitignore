@@ -1,5 +1,5 @@
 node_modules
+youtube-title-dapp.pem
+.env3
 # Keep environment variables out of version control
 .env
-.env3
-.youtube-title-dapp.pem
