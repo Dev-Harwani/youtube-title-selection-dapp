@@ -1,5 +1,7 @@
 import { NextFunction, Response, Request } from "express";
 import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "./config";
+import { WORKER_JWT_SECRET } from "./config";
 
 export function authMiddleware (req:Request, res:Response, next:NextFunction) {
     // @ts-ignore
@@ -7,7 +9,7 @@ export function authMiddleware (req:Request, res:Response, next:NextFunction) {
     if(authHeader){
         const token = authHeader.split(" ")[1];
 
-        const decoded = jwt.verify(token,"asdf");
+        const decoded = jwt.verify(token,JWT_SECRET);
         //@ts-ignore
         if(decoded.userId){
             //@ts-ignore
@@ -29,7 +31,7 @@ export function workerAuthMiddleware (req:Request, res:Response, next:NextFuncti
     if(authHeader){
         const token = authHeader.split(" ")[1];
 
-        const decoded = jwt.verify(token,"asdferf");
+        const decoded = jwt.verify(token,WORKER_JWT_SECRET);
         //@ts-ignore
         if(decoded.userId){
             //@ts-ignore

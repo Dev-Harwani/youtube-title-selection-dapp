@@ -2,6 +2,7 @@ import { Router } from 'express';
 import jwt from 'jsonwebtoken'
 import prisma from '../util';
 import { workerAuthMiddleware } from '../middleware';
+import { WORKER_JWT_SECRET } from '../config';
 
 const router = Router();
 
@@ -21,12 +22,12 @@ router.post("/signin", async(req,res) => {
                 }
             })
 
-            const token = jwt.sign({userId: user.id}, "asdf");
+            const token = jwt.sign({userId: user.id}, WORKER_JWT_SECRET);
         res.status(200).json({
             token: token
         })
         }
-        const token = jwt.sign({userId: existingUser?.id}, "asdf");
+        const token = jwt.sign({userId: existingUser?.id}, WORKER_JWT_SECRET);
         res.status(200).json({
             token: token
         })
@@ -51,7 +52,8 @@ router.get("/nextTask",workerAuthMiddleware, async(req,res) => {
             }
         },
         select: {
-            options:true
+            options:true,
+            title: true
         }
     });
     if (!remainingTasks){

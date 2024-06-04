@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../middleware';
 import z from 'zod';
 import { taskInputs } from '../inputs';
+import { JWT_SECRET } from '../config';
 
 const router = Router();
 
@@ -110,7 +111,7 @@ router.post("/signin", async(req,res) => {
     })
 
     if (existingUser){
-        const token = jwt.sign({userId: existingUser.id}, "asdf", {expiresIn:'1h'})
+        const token = jwt.sign({userId: existingUser.id}, JWT_SECRET)
         return res.status(200).json({
             token: token
         })
