@@ -7,3 +7,8 @@ export const taskInputs = z.object({
     title: z.string(),           // example: which of the following titles will most likely catch your eye?
     signature: z.string()
 })
+
+export const submissionInputs = z.object({
+    option: z.string(),
+    taskId: z.string()
+})

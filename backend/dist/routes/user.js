@@ -13,16 +13,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const util_1 = __importDefault(require("../util"));
+const connection_1 = __importDefault(require("../connection"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const middleware_1 = require("../middleware");
 const inputs_1 = require("../inputs");
+const config_1 = require("../config");
 const router = (0, express_1.Router)();
 router.get("/task", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const taskId = req.query.taskId;
     //@ts-ignore
     const userId = req.userId;
-    const details = yield util_1.default.task.findFirst({
+    const details = yield connection_1.default.task.findFirst({
         where: {
             id: Number(taskId),
             userId: userId,
@@ -36,7 +37,7 @@ router.get("/task", middleware_1.authMiddleware, (req, res) => __awaiter(void 0,
             message: "you dont have access to this task."
         });
     }
-    const responses = yield util_1.default.submission.findMany({
+    const responses = yield connection_1.default.submission.findMany({
         where: {
             taskId: Number(taskId)
         },
@@ -70,7 +71,7 @@ router.post("/task", middleware_1.authMiddleware, (req, res) => __awaiter(void 0
             message: "data validation failed. Put correct data with correct datatypes"
         });
     }
-    const resp = yield util_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+    const resp = yield connection_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield tx.task.create({
             data: {
                 userId: userId,
@@ -93,24 +94,24 @@ router.post("/task", middleware_1.authMiddleware, (req, res) => __awaiter(void 0
 }));
 router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const address = "0xe57FC3a21E15931b5F4A84f86f06fEB87c56b7e8"; // currently hardcoded. Will have to get this from user in future.
-    const existingUser = yield util_1.default.user.findFirst({
+    const existingUser = yield connection_1.default.user.findFirst({
         where: {
             address: address
         }
     });
     if (existingUser) {
-        const token = jsonwebtoken_1.default.sign({ userId: existingUser.id }, "asdf", { expiresIn: '1h' });
+        const token = jsonwebtoken_1.default.sign({ userId: existingUser.id }, config_1.JWT_SECRET);
         return res.status(200).json({
             token: token
         });
     }
     else {
-        const user = yield util_1.default.user.create({
+        const user = yield connection_1.default.user.create({
             data: {
                 address: address
             }
         });
-        const token = jsonwebtoken_1.default.sign({ userId: user.id }, "asdf", { expiresIn: '1h' });
+        const token = jsonwebtoken_1.default.sign({ userId: user.id }, config_1.JWT_SECRET);
         return res.status(200).json({
             token: token
         });

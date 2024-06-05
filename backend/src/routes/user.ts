@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import prisma from '../util';
+import prisma from '../connection';
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../middleware';
 import z from 'zod';
@@ -123,7 +123,7 @@ router.post("/signin", async(req,res) => {
                 address:address
             }
         })
-        const token = jwt.sign({userId: user.id}, "asdf", {expiresIn:'1h'});
+        const token = jwt.sign({userId: user.id}, JWT_SECRET);
         return res.status(200).json({
             token: token
         })

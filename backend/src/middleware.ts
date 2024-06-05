@@ -33,9 +33,9 @@ export function workerAuthMiddleware (req:Request, res:Response, next:NextFuncti
 
         const decoded = jwt.verify(token,WORKER_JWT_SECRET);
         //@ts-ignore
-        if(decoded.userId){
+        if(decoded.workerId){
             //@ts-ignore
-            req.userId = decoded.userId;
+            req.workerId = decoded.workerId;
             return next();
         }
         else{

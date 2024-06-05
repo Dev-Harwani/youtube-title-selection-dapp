@@ -11,12 +11,14 @@ model User {
   id      Int    @id @default(autoincrement())
   address String @unique
   tasks   Task[]
+  payouts Payouts[]
 }
 
 model Worker {
   id          Int          @id @default(autoincrement())
   address     String       @unique
-  balance     String
+  pending_amount     Decimal @db.Decimal(18, 6) @default(0)
+  locked_amount     Decimal @db.Decimal(18, 6) @default(0)
   submissions Submission[]
 }
 
@@ -56,4 +58,20 @@ model Submission {
   option   Option @relation(fields: [optionId], references: [id])
   task     Task   @relation(fields: [taskId], references: [id])
   worker   Worker @relation(fields: [workerId], references: [id])
+  @@unique([workerId,taskId])
+}
+
+model Payouts {
+  id      Int @id @default(autoincrement())
+  userId  Int 
+  user    User @relation(fields: [userId], references: [id])
+  amount  Int
+  signature String
+  status TxnStatus
+}
+
+enum TxnStatus {
+  Processing
+  Success
+  Failure
 }
