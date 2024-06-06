@@ -71,17 +71,21 @@ router.post("/submission", workerAuthMiddleware, async(req,res) => {
                 message: "incorrect task id"
             })
         }
-
-        const amount = (Number(task?.amount) / TOTAL_SUBMISSIONS).toString()
+        if (!task){
+            return res.status(404).json({
+                message: "task not found"
+            })
+        }
+        const amount = (Number(task.amount) / TOTAL_SUBMISSIONS).toString()
         
         const submission = await prisma.$transaction(async tx => {
             
             const submission = await tx.submission.create({
                 data: {
-                    workerId: workerId,
+                    workerId: Number(workerId),
                     optionId: Number(parsedData.data.option),
                     taskId: Number(parsedData.data.taskId),
-                    amount
+                    amount: Number(amount)
                 }
             })
             
@@ -142,10 +146,45 @@ router.post("/payouts", workerAuthMiddleware, async(req,res) => {
             id: Number(workerId)
         }
     })
-    
-    const address = worker?.address; 
+    if (!worker){
+        return res.status(404).json({
+            message: "worker does not exist"
+        })
+    }
+    const address = worker.address; 
     // logic to create txnId
     const txnId = "0xasdfasdf"
+
+    await prisma.$transaction(async tx => {
+        await tx.worker.update({
+            where: {
+                id: workerId
+            },
+            data: {
+                locked_amount: {
+                    increment: worker.pending_amount
+                },
+                pending_amount: {
+                    decrement: worker.pending_amount
+                }
+            }
+        })
+
+        await tx.payouts.create({
+            data: {
+                userId:Number(workerId),
+                amount: worker.pending_amount,
+                status: "Processing",
+                signature:txnId
+            }
+        })
+    })
+
+    res.status(200).json({
+        message: "processing transaction",
+        amount: worker.pending_amount
+    })
+    
 })
 
 

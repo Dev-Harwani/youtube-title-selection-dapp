@@ -32,8 +32,7 @@ router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function*
         if (!existingUser) {
             const user = yield connection_1.default.worker.create({
                 data: {
-                    address: address,
-                    balance: 0
+                    address: address
                 }
             });
             const token = jsonwebtoken_1.default.sign({ workerId: user.id }, config_1.WORKER_JWT_SECRET);
@@ -77,19 +76,24 @@ router.post("/submission", middleware_1.workerAuthMiddleware, (req, res) => __aw
                 message: "incorrect task id"
             });
         }
-        const amount = (Number(task === null || task === void 0 ? void 0 : task.amount) / TOTAL_SUBMISSIONS).toString();
+        if (!task) {
+            return res.status(404).json({
+                message: "task not found"
+            });
+        }
+        const amount = (Number(task.amount) / TOTAL_SUBMISSIONS).toString();
         const submission = yield connection_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
-            const submission = yield connection_1.default.submission.create({
+            const submission = yield tx.submission.create({
                 data: {
-                    workerId: workerId,
+                    workerId: Number(workerId),
                     optionId: Number(parsedData.data.option),
                     taskId: Number(parsedData.data.taskId),
-                    amount
+                    amount: Number(amount)
                 }
             });
-            yield connection_1.default.worker.update({
+            yield tx.worker.update({
                 data: {
-                    balance: {
+                    pending_amount: {
                         increment: Number(amount)
                     }
                 },
@@ -110,5 +114,65 @@ router.post("/submission", middleware_1.workerAuthMiddleware, (req, res) => __aw
             message: "provide correct inputs"
         });
     }
+}));
+router.get("/balance", middleware_1.workerAuthMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //@ts-ignore
+    const workerId = req.workerId;
+    const balance = yield connection_1.default.worker.findFirst({
+        where: {
+            id: workerId
+        },
+        select: {
+            pending_amount: true,
+            locked_amount: true
+        }
+    });
+    return res.status(200).json({
+        balance: balance
+    });
+}));
+router.post("/payouts", middleware_1.workerAuthMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //@ts-ignore
+    const workerId = req.workerId;
+    const worker = yield connection_1.default.worker.findFirst({
+        where: {
+            id: Number(workerId)
+        }
+    });
+    if (!worker) {
+        return res.status(404).json({
+            message: "worker does not exist"
+        });
+    }
+    const address = worker.address;
+    // logic to create txnId
+    const txnId = "0xasdfasdf";
+    yield connection_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+        yield tx.worker.update({
+            where: {
+                id: workerId
+            },
+            data: {
+                locked_amount: {
+                    increment: worker.pending_amount
+                },
+                pending_amount: {
+                    decrement: worker.pending_amount
+                }
+            }
+        });
+        yield tx.payouts.create({
+            data: {
+                userId: Number(workerId),
+                amount: worker.pending_amount,
+                status: "Processing",
+                signature: txnId
+            }
+        });
+    }));
+    res.status(200).json({
+        message: "processing transaction",
+        amount: worker.pending_amount
+    });
 }));
 exports.default = router;
